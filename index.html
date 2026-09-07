@@ -202,7 +202,7 @@
             text-decoration: none;
             font-size: 13px;
         }
-        .admin-card {
+        .admin-card, .history-card {
             background: #f8f9fa;
             border: 1px solid #ccc;
             padding: 12px;
@@ -280,6 +280,13 @@
             <div id="plansContainer" class="hidden">
                 <h3 style="font-size: 15px; margin: 15px 0 10px 0; color: #444;">Available Plans (₹299 - ₹400) [5% OFF]</h3>
                 <div id="plansList"></div>
+            </div>
+
+            <!-- USER TRANSACTION HISTORY -->
+            <hr style="margin: 20px 0;">
+            <h3 style="font-size: 15px; margin-bottom: 10px; color: #333;">Your Activity History</h3>
+            <div id="userHistoryList" style="max-height: 200px; overflow-y: auto;">
+                <!-- History items injected here -->
             </div>
 
             <hr style="margin: 20px 0;">
@@ -442,6 +449,8 @@
             document.getElementById("gatewaySection").classList.add("hidden");
             document.getElementById("adminLoginSection").classList.add("hidden");
             document.getElementById("adminDashboardSection").classList.add("hidden");
+
+            loadUserHistory();
         }
 
         function showUserSection() {
@@ -524,7 +533,7 @@
                 return;
             }
             currentTxnAmount = amount;
-            selectedPlanDetails = `Recharge Number: ${targetMobile} | Plan: ${desc} | Paid: ₹${amount}`;
+            selectedPlanDetails = `Recharge Number: ${targetMobile} | Plan: ${desc}`;
             setupGateway(amount);
         }
 
@@ -549,29 +558,63 @@
                 return;
             }
 
+            // Save pending request for Admin Panel
             let pendingRequests = JSON.parse(localStorage.getItem("pendingRequests") || "[]");
-            pendingRequests.push({
+            let newRequest = {
                 user: currentUser,
                 amount: currentTxnAmount,
                 details: selectedPlanDetails,
                 utr: utr,
                 time: new Date().toLocaleString()
-            });
+            };
+            pendingRequests.push(newRequest);
             localStorage.setItem("pendingRequests", JSON.stringify(pendingRequests));
 
-            let message = `🚨 New Transaction / Recharge Request 🚨\n\n👤 Logged User: ${currentUser}\n📦 Details: ${selectedPlanDetails}\n🔖 UTR / Txn ID: ${utr}\n🌐 UPI ID: ${UPI_ID}`;
-            
+            // Save to user history as Pending
+            let allHistory = JSON.parse(localStorage.getItem("userHistory") || "{}");
+            if(!allHistory[currentUser]) allHistory[currentUser] = [];
+            allHistory[currentUser].unshift({
+                details: selectedPlanDetails,
+                amount: currentTxnAmount,
+                utr: utr,
+                status: "Pending Approval",
+                time: new Date().toLocaleString()
+            });
+            localStorage.setItem("userHistory", JSON.stringify(allHistory));
+
+            let message = `🚨 New Transaction / Recharge Request 🚨\n\n👤 User: ${currentUser}\n📦 Details: ${selectedPlanDetails}\n🔖 UTR / Txn ID: ${utr}\n💰 Amount: ₹${currentTxnAmount}`;
             let telegramUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}&parse_mode=Markdown`;
 
-            fetch(telegramUrl, { method: 'GET', mode: 'no-cors' })
-            .catch(() => {})
-            .finally(() => {
-                let img = new Image();
-                img.src = telegramUrl;
-                alert("Payment proof submitted successfully! Waiting for admin approval.");
-                document.getElementById("utrInput").value = "";
-                fileInput.value = "";
-                loadDashboard();
+            fetch(telegramUrl, { method: 'GET', mode: 'no-cors' }).catch(() => {});
+
+            alert("Payment proof submitted successfully! Waiting for admin approval.");
+            document.getElementById("utrInput").value = "";
+            fileInput.value = "";
+            loadDashboard();
+        }
+
+        function loadUserHistory() {
+            let container = document.getElementById("userHistoryList");
+            container.innerHTML = "";
+
+            let allHistory = JSON.parse(localStorage.getItem("userHistory") || "{}");
+            let userHist = allHistory[currentUser] || [];
+
+            if(userHist.length === 0) {
+                container.innerHTML = "<p style='text-align:center; color:#777; font-size:13px;'>No history found.</p>";
+                return;
+            }
+
+            userHist.forEach(item => {
+                let statusColor = item.status === "Approved" ? "color: #27ae60;" : "color: #e67e22;";
+                container.innerHTML += `
+                    <div class="history-card">
+                        <p><b>${item.details}</b></p>
+                        <p>Amount: ₹${item.amount} | UTR: ${item.utr}</p>
+                        <p>Status: <span style="font-weight:bold; ${statusColor}">${item.status}</span></p>
+                        <p style="font-size:11px; color:#888;">${item.time}</p>
+                    </div>
+                `;
             });
         }
 
@@ -617,14 +660,14 @@
                         <p><b>UTR:</b> ${req.utr}</p>
                         <p><b>Amount:</b> ₹${req.amount}</p>
                         <p><b>Time:</b> ${req.time}</p>
-                        <button style="background: #27ae60; padding: 6px; font-size: 13px; margin-top: 8px;" onclick="approveRequest(${index}, '${req.user}', ${req.amount})">Approve & Add Balance</button>
-                        <button style="background: #c0392b; padding: 6px; font-size: 13px; margin-top: 5px;" onclick="rejectRequest(${index})">Reject</button>
+                        <button style="background: #27ae60; padding: 6px; font-size: 13px; margin-top: 8px;" onclick="approveRequest(${index}, '${req.user}', ${req.amount}, '${req.utr}')">Approve & Add Balance</button>
+                        <button style="background: #c0392b; padding: 6px; font-size: 13px; margin-top: 5px;" onclick="rejectRequest(${index}, '${req.user}', '${req.utr}')">Reject</button>
                     </div>
                 `;
             });
         }
 
-        function approveRequest(index, targetUser, amount) {
+        function approveRequest(index, targetUser, amount, utr) {
             let users = JSON.parse(localStorage.getItem("users") || "{}");
             if(users[targetUser]) {
                 users[targetUser].balance = (users[targetUser].balance || 0) + amount;
@@ -635,14 +678,31 @@
             pendingRequests.splice(index, 1);
             localStorage.setItem("pendingRequests", JSON.stringify(pendingRequests));
 
-            alert("Request approved and balance added successfully to user account!");
+            // Update user history status to Approved
+            let allHistory = JSON.parse(localStorage.getItem("userHistory") || "{}");
+            if(allHistory[targetUser]) {
+                let histItem = allHistory[targetUser].find(h => h.utr === utr);
+                if(histItem) histItem.status = "Approved";
+                localStorage.setItem("userHistory", JSON.stringify(allHistory));
+            }
+
+            alert("Request approved and balance added successfully!");
             loadAdminRequests();
         }
 
-        function rejectRequest(index) {
+        function rejectRequest(index, targetUser, utr) {
             let pendingRequests = JSON.parse(localStorage.getItem("pendingRequests") || "[]");
             pendingRequests.splice(index, 1);
             localStorage.setItem("pendingRequests", JSON.stringify(pendingRequests));
+
+            // Update user history status to Rejected
+            let allHistory = JSON.parse(localStorage.getItem("userHistory") || "{}");
+            if(allHistory[targetUser]) {
+                let histItem = allHistory[targetUser].find(h => h.utr === utr);
+                if(histItem) histItem.status = "Rejected";
+                localStorage.setItem("userHistory", JSON.stringify(allHistory));
+            }
+
             alert("Request rejected.");
             loadAdminRequests();
         }
