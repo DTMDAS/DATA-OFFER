@@ -254,7 +254,7 @@
             <div class="switch-text" id="switchText" onclick="toggleAuthMode()">Already have an account? Login</div>
         </div>
 
-        <!-- DASHBOARD SECTION (Recharge Input & Plans) -->
+        <!-- DASHBOARD SECTION -->
         <div id="dashboardSection" class="hidden">
             <div class="warning-notice">
                 ⚠️ <strong>Number Check Kar Ke Dalein!</strong><br>Galat number par recharge hone par hamari zimmedari nahi hai.
@@ -549,7 +549,6 @@
                 return;
             }
 
-            // Save pending request to localStorage for admin panel approval
             let pendingRequests = JSON.parse(localStorage.getItem("pendingRequests") || "[]");
             pendingRequests.push({
                 user: currentUser,
@@ -576,7 +575,6 @@
             });
         }
 
-        /* --- ADMIN PANEL FUNCTIONS --- */
         function showAdminLogin() {
             document.getElementById("authSection").classList.add("hidden");
             document.getElementById("dashboardSection").classList.add("hidden");
