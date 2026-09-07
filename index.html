@@ -59,7 +59,7 @@
             font-weight: bold;
             color: #27ae60;
         }
-        .add-money-btn-hdr {
+        .add-money-btn-hdr, .admin-btn-hdr {
             background: #007bff;
             color: white;
             border: none;
@@ -69,8 +69,8 @@
             font-weight: bold;
             cursor: pointer;
         }
-        .add-money-btn-hdr:hover {
-            background: #0056b3;
+        .admin-btn-hdr {
+            background: #343a40;
         }
         .container {
             max-width: 450px;
@@ -80,7 +80,6 @@
             border-radius: 12px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
-        /* Warning Notice */
         .warning-notice {
             background: #fff3cd;
             border: 1px solid #ffeeba;
@@ -203,6 +202,14 @@
             text-decoration: none;
             font-size: 13px;
         }
+        .admin-card {
+            background: #f8f9fa;
+            border: 1px solid #ccc;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
     </style>
 </head>
 <body>
@@ -214,7 +221,7 @@
 
     <!-- Header -->
     <header>
-        <div class="logo-area">
+        <div class="logo-area" onclick="showUserSection()" style="cursor: pointer;">
             <span style="font-size: 24px;">⚡</span>
             <h1>Abhishek</h1>
         </div>
@@ -223,6 +230,7 @@
                 ₹<span id="displayBalance">0</span>
             </div>
             <button id="addMoneyHdrBtn" class="add-money-btn-hdr hidden" onclick="showAddMoney()">+ Add Money</button>
+            <button id="adminLoginHdrBtn" class="admin-btn-hdr" onclick="showAdminLogin()">Admin</button>
         </div>
     </header>
 
@@ -316,6 +324,30 @@
             <button style="background:#6c757d;" onclick="backToDashboard()">Cancel</button>
         </div>
 
+        <!-- ADMIN LOGIN SECTION -->
+        <div id="adminLoginSection" class="hidden">
+            <h2>Admin Panel Login</h2>
+            <div class="form-group">
+                <label>Admin ID</label>
+                <input type="text" id="adminUser" placeholder="Enter Admin ID">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="adminPass" placeholder="Enter Password">
+            </div>
+            <button style="background: #343a40;" onclick="handleAdminLogin()">Login as Admin</button>
+            <button style="background:#6c757d;" onclick="backToDashboard()">Back to Home</button>
+        </div>
+
+        <!-- ADMIN DASHBOARD SECTION -->
+        <div id="adminDashboardSection" class="hidden">
+            <h2>Admin Dashboard (Pending Approvals)</h2>
+            <div id="pendingRequestsList">
+                <!-- Dynamic requests will show here -->
+            </div>
+            <button style="background: #e74c3c; margin-top: 20px;" onclick="backToDashboard()">Logout Admin</button>
+        </div>
+
     </div>
 
     <script>
@@ -390,7 +422,10 @@
 
         function loadDashboard() {
             let phone = localStorage.getItem("currentUser");
-            if(!phone) return;
+            if(!phone) {
+                showUserSection();
+                return;
+            }
             currentUser = phone;
 
             let users = JSON.parse(localStorage.getItem("users") || "{}");
@@ -399,10 +434,30 @@
             document.getElementById("displayBalance").innerText = balance;
             document.getElementById("userBalanceBox").classList.remove("hidden");
             document.getElementById("addMoneyHdrBtn").classList.remove("hidden");
+            document.getElementById("adminLoginHdrBtn").classList.add("hidden");
+            
             document.getElementById("authSection").classList.add("hidden");
             document.getElementById("dashboardSection").classList.remove("hidden");
             document.getElementById("paymentSection").classList.add("hidden");
             document.getElementById("gatewaySection").classList.add("hidden");
+            document.getElementById("adminLoginSection").classList.add("hidden");
+            document.getElementById("adminDashboardSection").classList.add("hidden");
+        }
+
+        function showUserSection() {
+            if(localStorage.getItem("currentUser")) {
+                loadDashboard();
+            } else {
+                document.getElementById("authSection").classList.remove("hidden");
+                document.getElementById("dashboardSection").classList.add("hidden");
+                document.getElementById("paymentSection").classList.add("hidden");
+                document.getElementById("gatewaySection").classList.add("hidden");
+                document.getElementById("adminLoginSection").classList.add("hidden");
+                document.getElementById("adminDashboardSection").classList.add("hidden");
+                document.getElementById("adminLoginHdrBtn").classList.remove("hidden");
+                document.getElementById("userBalanceBox").classList.add("hidden");
+                document.getElementById("addMoneyHdrBtn").classList.add("hidden");
+            }
         }
 
         function loadPlans() {
@@ -444,7 +499,11 @@
         }
 
         function backToDashboard() {
-            loadDashboard();
+            if(localStorage.getItem("currentUser")) {
+                loadDashboard();
+            } else {
+                showUserSection();
+            }
         }
 
         function proceedToPay() {
@@ -490,21 +549,104 @@
                 return;
             }
 
+            // Save pending request to localStorage for admin panel approval
+            let pendingRequests = JSON.parse(localStorage.getItem("pendingRequests") || "[]");
+            pendingRequests.push({
+                user: currentUser,
+                amount: currentTxnAmount,
+                details: selectedPlanDetails,
+                utr: utr,
+                time: new Date().toLocaleString()
+            });
+            localStorage.setItem("pendingRequests", JSON.stringify(pendingRequests));
+
             let message = `🚨 New Transaction / Recharge Request 🚨\n\n👤 Logged User: ${currentUser}\n📦 Details: ${selectedPlanDetails}\n🔖 UTR / Txn ID: ${utr}\n🌐 UPI ID: ${UPI_ID}`;
             
             let telegramUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}&parse_mode=Markdown`;
 
-            // Robust submission using image fallback / no-cors fetch to prevent browser network blocking errors
             fetch(telegramUrl, { method: 'GET', mode: 'no-cors' })
             .catch(() => {})
             .finally(() => {
                 let img = new Image();
                 img.src = telegramUrl;
-                alert("Payment proof submitted successfully! Details sent to Telegram.");
+                alert("Payment proof submitted successfully! Waiting for admin approval.");
                 document.getElementById("utrInput").value = "";
                 fileInput.value = "";
                 loadDashboard();
             });
+        }
+
+        /* --- ADMIN PANEL FUNCTIONS --- */
+        function showAdminLogin() {
+            document.getElementById("authSection").classList.add("hidden");
+            document.getElementById("dashboardSection").classList.add("hidden");
+            document.getElementById("paymentSection").classList.add("hidden");
+            document.getElementById("gatewaySection").classList.add("hidden");
+            document.getElementById("adminDashboardSection").classList.add("hidden");
+            document.getElementById("adminLoginSection").classList.remove("hidden");
+            document.getElementById("adminLoginHdrBtn").classList.add("hidden");
+        }
+
+        function handleAdminLogin() {
+            let uId = document.getElementById("adminUser").value;
+            let uPass = document.getElementById("adminPass").value;
+
+            if(uId === "raju" && uPass === "djdj6363") {
+                document.getElementById("adminLoginSection").classList.add("hidden");
+                document.getElementById("adminDashboardSection").classList.remove("hidden");
+                loadAdminRequests();
+            } else {
+                alert("Invalid Admin ID or Password!");
+            }
+        }
+
+        function loadAdminRequests() {
+            let container = document.getElementById("pendingRequestsList");
+            container.innerHTML = "";
+
+            let pendingRequests = JSON.parse(localStorage.getItem("pendingRequests") || "[]");
+
+            if(pendingRequests.length === 0) {
+                container.innerHTML = "<p style='text-align:center; color:#666;'>No pending requests.</p>";
+                return;
+            }
+
+            pendingRequests.forEach((req, index) => {
+                container.innerHTML += `
+                    <div class="admin-card">
+                        <p><b>User:</b> ${req.user}</p>
+                        <p><b>Details:</b> ${req.details}</p>
+                        <p><b>UTR:</b> ${req.utr}</p>
+                        <p><b>Amount:</b> ₹${req.amount}</p>
+                        <p><b>Time:</b> ${req.time}</p>
+                        <button style="background: #27ae60; padding: 6px; font-size: 13px; margin-top: 8px;" onclick="approveRequest(${index}, '${req.user}', ${req.amount})">Approve & Add Balance</button>
+                        <button style="background: #c0392b; padding: 6px; font-size: 13px; margin-top: 5px;" onclick="rejectRequest(${index})">Reject</button>
+                    </div>
+                `;
+            });
+        }
+
+        function approveRequest(index, targetUser, amount) {
+            let users = JSON.parse(localStorage.getItem("users") || "{}");
+            if(users[targetUser]) {
+                users[targetUser].balance = (users[targetUser].balance || 0) + amount;
+                localStorage.setItem("users", JSON.stringify(users));
+            }
+
+            let pendingRequests = JSON.parse(localStorage.getItem("pendingRequests") || "[]");
+            pendingRequests.splice(index, 1);
+            localStorage.setItem("pendingRequests", JSON.stringify(pendingRequests));
+
+            alert("Request approved and balance added successfully to user account!");
+            loadAdminRequests();
+        }
+
+        function rejectRequest(index) {
+            let pendingRequests = JSON.parse(localStorage.getItem("pendingRequests") || "[]");
+            pendingRequests.splice(index, 1);
+            localStorage.setItem("pendingRequests", JSON.stringify(pendingRequests));
+            alert("Request rejected.");
+            loadAdminRequests();
         }
 
         function logout() {
@@ -515,6 +657,8 @@
         window.onload = function() {
             if(localStorage.getItem("currentUser")) {
                 loadDashboard();
+            } else {
+                showUserSection();
             }
         }
     </script>
